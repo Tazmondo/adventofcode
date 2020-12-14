@@ -603,31 +603,69 @@ vibrant plum bags contain 5 faded blue bags, 6 dotted black bags.
 faded blue bags contain no other bags.
 dotted black bags contain no other bags."""
 
+inp3 = """shiny gold bags contain 2 dark red bags.
+dark red bags contain 2 dark orange bags.
+dark orange bags contain 2 dark yellow bags.
+dark yellow bags contain 2 dark green bags.
+dark green bags contain 2 dark blue bags.
+dark blue bags contain 2 dark violet bags.
+dark violet bags contain no other bags."""
+
+bagset = set()
+bagdescdict = dict()
+bagobjdict = dict()
+
 
 class Bag:
     def __init__(self, descriptor, contains):
         self.descriptor = descriptor
-        self.contains = contains
+        self.contains = []
 
-    def __contains__(self, item):
-        return any([item in bag for bag in self.contains])
+        for i in contains:
+            bagdesc = i[0]
+            count = i[1]
+            if bagdesc not in bagobjdict:
+                bagobjdict[bagdesc] = Bag(bagdesc, bagdescdict[bagdesc])
+
+            self.contains.append((bagobjdict[bagdesc], count))
+
+    def __contains__(self, item):  # for part 1
+        return any([item in bag for bag in self.contains]) or item.descriptor == self.descriptor
+
+    def getcount(self):  # for part 2
+        return 1 + sum(map(lambda a: a[1] * a[0].getcount(), self.contains))
 
 
-bagset = set()
-bagdict = dict()
-bagdescs = inp2.split("\n")
+bagdescs = inp.split("\n")
 
 for desc in bagdescs:
     descriptor, contents = (i.strip() for i in desc.split("contain"))
     descriptor = descriptor[:-5]
 
-    contents = [bag for i in contents.split(",") if (bag := i.strip()[2:].split("bag")[0].strip()) != "other"]
+    realcontents = []
 
-    bagdict[descriptor] = contents
+    for sector in contents.split(","):
+        sector = sector.strip()
+        count = int(sector[0]) if sector[0].isdigit() else 0
+        bag = sector[2:].split("bag")[0].strip()
+        if bag == "other":
+            continue
+        realcontents.append((bag, count))
+
+    # contents = [bag for i in contents.split(",") if (bag := i.strip()[2:].split("bag")[0].strip()) != "other"]
+
+    bagdescdict[descriptor] = realcontents
 
     pass
 
-for bag in bagdescs:
+for desc in bagdescdict:
+    if desc not in bagobjdict:
+        bagobjdict[desc] = Bag(desc, bagdescdict[desc])
 
+# PART 1
+bagsthatcontaingold = [bagobjdict[x] for x in bagobjdict if bagobjdict['shiny gold'] in bagobjdict[x]]
 
-pass
+print(len(bagsthatcontaingold) - 1)  # -1 to account for the shiny gold bag itself
+
+# PART 2
+print(bagobjdict['shiny gold'].getcount() - 1) # -1 again for similar reason as above
